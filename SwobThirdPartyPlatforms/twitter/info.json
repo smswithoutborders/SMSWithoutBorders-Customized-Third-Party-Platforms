@@ -1,0 +1,11 @@
+{
+    "name": "twitter",
+    "description": {
+        "en": "Twitter is a microblogging and social networking service. By storing access with us, you will be able to tweet in real time by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+        "fr": "Twitter est un service de microblogging et de réseau social. En stockant un accès chez nous, vous pourrez tweeter en temps réel par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne."
+    },
+    "type": "text",
+    "logo": "/public/twitter-icon.svg",
+    "protocols": ["oauth2"],
+    "letter": "t"
+}
