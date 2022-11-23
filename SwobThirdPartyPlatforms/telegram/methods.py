@@ -175,7 +175,7 @@ class Methods:
             me = await client.get_me()
 
             return {
-                "token": self.phone_number,
+                "token": json.dumps(self.phone_number),
                 "profile": {
                     "name": me.first_name,
                     "unique_id": self.phone_number
@@ -305,7 +305,7 @@ class Methods:
             me = await client.get_me()
 
             return {
-                "token": self.phone_number,
+                "token": json.dumps(self.phone_number),
                 "profile": {
                     "name": me.first_name,
                     "unique_id": self.phone_number
