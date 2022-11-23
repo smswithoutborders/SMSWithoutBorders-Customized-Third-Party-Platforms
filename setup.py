@@ -23,5 +23,7 @@ setup(
         'python-twitter-v2==0.7.7',
         'tweepy==4.8.0'
     ],
+    package_data={'': ['info.json', '*-icon.svg']},
+    include_package_data=True,
     test_suite='tests',
 )
