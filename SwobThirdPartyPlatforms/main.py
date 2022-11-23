@@ -47,7 +47,11 @@ class ImportPlatform:
                 platform_methods = importlib.util.module_from_spec(spec)       
                 spec.loader.exec_module(platform_methods)
                 self.methods = platform_methods.Methods
-                self.exceptions = platform_methods.exceptions
+
+                try:
+                    self.exceptions = platform_methods.exceptions
+                except AttributeError:
+                    pass
                 
                 platform_execute_filepath = os.path.join(platform_path, "%s.py" % self.platform_name)
                 spec = importlib.util.spec_from_file_location(self.platform_name, platform_execute_filepath)   
