@@ -78,8 +78,11 @@ class Methods:
             logger.info("- Successfully fetched token and profile")
 
             return {
-                "profile": user_info,
-                "token": credentials.to_json()
+                "token": credentials.to_json(),
+                "profile": {
+                    "name": user_info.get("name"),
+                    "unique_id": user_info.get("email")
+                }
             }
 
         except HttpError as error:

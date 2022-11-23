@@ -59,8 +59,11 @@ class Methods:
             logger.info("- Successfully fetched token and profile")
 
             return {
-                "profile": profile["data"],
-                "token": json.dumps(access_token)
+                "token": json.dumps(access_token),
+                "profile": {
+                    "name": profile["data"]["name"],
+                    "unique_id": profile["data"]["username"]
+                }
             }
 
         except Exception as error:

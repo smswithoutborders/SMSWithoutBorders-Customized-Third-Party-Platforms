@@ -175,13 +175,10 @@ class Methods:
             me = await client.get_me()
 
             return {
-                "phone_number": self.phone_number,
+                "token": self.phone_number,
                 "profile": {
-                    "id": me.id,
-                    "phone": me.phone,
-                    "username": me.username,
-                    "first_name": me.first_name,
-                    "last_name": me.last_name
+                    "name": me.first_name,
+                    "unique_id": self.phone_number
                 }
             }
 
@@ -308,13 +305,10 @@ class Methods:
             me = await client.get_me()
 
             return {
-                "phone_number": self.phone_number,
+                "token": self.phone_number,
                 "profile": {
-                    "id": me.id,
-                    "phone": me.phone,
-                    "username": me.username,
-                    "first_name": me.first_name,
-                    "last_name": me.last_name
+                    "name": me.first_name,
+                    "unique_id": self.phone_number
                 }
             }
 
