@@ -17,10 +17,12 @@ if not os.path.exists(credentials_filepath):
     error = "Gmail credentials.json file not found at %s" % credentials_filepath
     raise FileNotFoundError(error)
 
-class MisMatchScope(Exception):
-    def __init__(self, message="Scope mismatch"):
-        self.message = message
-        super().__init__(self.message)
+
+class exceptions:
+    class MisMatchScope(Exception):
+        def __init__(self, message="Scope mismatch"):
+            self.message = message
+            super().__init__(self.message)
 
 class Methods:
     def __init__(self, origin:str) -> None:
@@ -65,7 +67,7 @@ class Methods:
             for item in self.scopes:
                 if item not in scope.split(" "):
                     logger.error("Missing scope %s" % item)
-                    raise MisMatchScope()
+                    raise exceptions.MisMatchScope()
 
             self.gmail.fetch_token(code=code)
             credentials = self.gmail.credentials

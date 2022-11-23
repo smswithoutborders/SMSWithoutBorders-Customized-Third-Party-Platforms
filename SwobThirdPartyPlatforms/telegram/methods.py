@@ -32,25 +32,26 @@ from telethon import types
 
 logger = logging.getLogger(__name__)
 
-class RegisterAccountError(Exception):
-    def __init__(self, message="No account"):
-        self.message = message
-        super().__init__(self.message)
+class exceptions:
+    class RegisterAccountError(Exception):
+        def __init__(self, message="No account"):
+            self.message = message
+            super().__init__(self.message)
 
-class SessionExistError(Exception):
-    def __init__(self, message="Duplicate sessions"):
-        self.message = message
-        super().__init__(self.message)
+    class SessionExistError(Exception):
+        def __init__(self, message="Duplicate sessions"):
+            self.message = message
+            super().__init__(self.message)
 
-class InvalidCodeError(Exception):
-    def __init__(self, message="Invalid verification code"):
-        self.message = message
-        super().__init__(self.message)
+    class InvalidCodeError(Exception):
+        def __init__(self, message="Invalid verification code"):
+            self.message = message
+            super().__init__(self.message)
 
-class TooManyRequests(Exception):
-    def __init__(self, message="Too many requests"):
-        self.message = message
-        super().__init__(self.message)
+    class TooManyRequests(Exception):
+        def __init__(self, message="Too many requests"):
+            self.message = message
+            super().__init__(self.message)
 
 def md5hash( data: str) -> str:
     """
@@ -96,13 +97,13 @@ class Methods:
 
             else:
                 logger.error("Session already exist")
-                raise SessionExistError()
+                raise exceptions.SessionExistError()
 
-        except SessionExistError:
-            raise SessionExistError()
+        except exceptions.SessionExistError:
+            raise exceptions.SessionExistError()
         except FloodWaitError as error:
             logger.error(error)
-            raise TooManyRequests()
+            raise exceptions.TooManyRequests()
         except Exception as error:
             raise error
 
@@ -187,20 +188,20 @@ class Methods:
         except PhoneNumberUnoccupiedError as error:
             logger.error("%s has no account" % self.phone_number)
             self.__write_registry__(code=code, phone_code_hash=result["phone_code_hash"])
-            raise RegisterAccountError()
+            raise exceptions.RegisterAccountError()
         except PhoneCodeInvalidError as error:
             logger.error("The phone code entered was invalid")
             self.__write_registry__(phone_code_hash=result["phone_code_hash"])
-            raise InvalidCodeError()
+            raise exceptions.InvalidCodeError()
         except PhoneCodeExpiredError as error:
             logger.error("The confirmation code has expired")
-            raise InvalidCodeError()
+            raise exceptions.InvalidCodeError()
         except SessionPasswordNeededError as error:
             logger.error("two-steps verification is enabled and a password is required")
             raise error
         except FloodWaitError as error:
             logger.error(error)
-            raise TooManyRequests()
+            raise exceptions.TooManyRequests()
         except Exception as error:
             raise error
         finally:
@@ -320,13 +321,13 @@ class Methods:
         except PhoneCodeInvalidError as error:
             logger.error("The phone code entered was invalid")
             self.__write_registry__(phone_code_hash=result["phone_code_hash"])
-            raise InvalidCodeError()
+            raise exceptions.InvalidCodeError()
         except PhoneCodeExpiredError as error:
             logger.error("The confirmation code has expired")
-            raise InvalidCodeError()
+            raise exceptions.InvalidCodeError()
         except FloodWaitError as error:
             logger.error(error)
-            raise TooManyRequests()
+            raise exceptions.TooManyRequests()
         except Exception as error:
             raise error
         finally:
