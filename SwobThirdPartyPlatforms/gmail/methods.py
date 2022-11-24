@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 
 import requests
 import json
@@ -11,12 +10,13 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+logger = logging.getLogger(__name__)
+
 credentials_filepath = os.environ["GMAIL_CREDENTIALS"]
 
 if not os.path.exists(credentials_filepath):
     error = "Gmail credentials.json file not found at %s" % credentials_filepath
     logger.warning(error)
-
 
 class exceptions:
     class MisMatchScope(Exception):

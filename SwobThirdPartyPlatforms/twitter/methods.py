@@ -1,10 +1,10 @@
 import logging
-logger = logging.getLogger(__name__)
+import json
+import os
 
 from pytwitter import Api
 
-import json
-import os
+logger = logging.getLogger(__name__)
 
 credentials_path = os.environ["TWITTER_CREDENTIALS"]
 
@@ -12,13 +12,13 @@ if not os.path.exists(credentials_path):
     error = "Twitter credentials.json file not found at %s" % credentials_path
     logger.warning(error)
 
-c = open(credentials_path)
-creds = json.load(c)
-
 class Methods:
     def __init__(self, origin: str) -> None:
         """
         """
+        c = open(credentials_path)
+        creds = json.load(c)
+
         self.credentials = creds
         self.scope=["tweet.write", "users.read", "tweet.read", "offline.access"]
         self.origin=origin

@@ -2,7 +2,9 @@
 
 import os
 import sys
+import asyncio
 import logging
+
 from inspect import getsourcefile
 from os.path import abspath
 
@@ -10,7 +12,7 @@ dir_path = os.path.dirname(abspath(getsourcefile(lambda:0)))
 sys.path.insert(0, dir_path)
 
 from methods import Methods
-import asyncio
+
 logging.basicConfig(level='DEBUG')
 
 async def run(body: str, user_details: dict)->None:
