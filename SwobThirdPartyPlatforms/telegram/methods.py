@@ -1,19 +1,5 @@
 import logging
 import os
-import json
-
-credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
-
-if not os.path.exists(credentials_path):
-    error = "Telegram credentials.json file not found at %s" % credentials_path
-    raise FileNotFoundError(error)
-
-c = open(credentials_path)
-creds = json.load(c)
-api_id = creds['api_id']
-api_hash = creds['api_hash']
-
-import os
 import shutil
 import json
 import hashlib
@@ -31,6 +17,17 @@ from telethon import functions
 from telethon import types
 
 logger = logging.getLogger(__name__)
+
+credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
+
+if not os.path.exists(credentials_path):
+    error = "Telegram credentials.json file not found at %s" % credentials_path
+    logger.warning(error)
+
+c = open(credentials_path)
+creds = json.load(c)
+api_id = creds['api_id']
+api_hash = creds['api_hash']
 
 class exceptions:
     class RegisterAccountError(Exception):

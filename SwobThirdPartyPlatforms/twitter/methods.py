@@ -10,7 +10,7 @@ credentials_path = os.environ["TWITTER_CREDENTIALS"]
 
 if not os.path.exists(credentials_path):
     error = "Twitter credentials.json file not found at %s" % credentials_path
-    raise FileNotFoundError(error)
+    logger.warning(error)
 
 c = open(credentials_path)
 creds = json.load(c)

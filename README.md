@@ -36,15 +36,107 @@ $ cd SMSWithoutBorders-Customized-Third-Party-Platforms
 $ python3 setup.py install
 ```
 
+## Supported Platforms
+
+1. [Gmail](./SwobThirdPartyPlatforms/gmail/README.md)
+2. [Twitter](./SwobThirdPartyPlatforms/twitter/README.md)
+3. [Telegram](./SwobThirdPartyPlatforms/telegram/README.md)
+
 ## Usage
 
 ### Table of Content
 
 ---
 
+1. [Initialize Platform methods](#methods)
+2. [Initialize Platform execute](#methods)
+3. [Get Platform Information](#information)
+
 ---
 
+### methods
+
+```python
+from SwobThirdPartyPlatforms import ImportPlatform
+from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
+
+try
+    # Import platform
+    Platform = ImportPlatform(platform_name="platform_name")
+
+    # Initialize OAuth2 Methods
+    Methods = Platform.methods(origin = "origin")
+    # Initialize TwoFactor Methods
+    Methods = Platform.methods(identifier = "identifier")
+
+    try
+        # authorization
+        authorization_result = Methods.authorize()
+
+        # validation
+        validation_result = Methods.validate(
+            code=code,
+            scope=scope,
+            code_verifier=code_verifier
+        )
+
+        # invalidation
+        Methods.invalidate(token=token)
+
+    except Platform.exceptions.<some platform exception>
+
+except PlatformDoesNotExist as error:
+    # Do something
+
+except Exception as error:
+    # Do something
+```
+
+### execute
+
+```python
+from SwobThirdPartyPlatforms import ImportPlatform
+from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
+
+try
+    # Import platform
+    Platform = ImportPlatform(platform_name="platform_name")
+
+    # run execute function
+    Platform.execute(body=body, user_details=user_details)
+
+except PlatformDoesNotExist as error:
+    # Do something
+
+except Exception as error:
+    # Do something
+```
+
+### information
+
+```python
+from SwobThirdPartyPlatforms import ImportPlatform
+from SwobThirdPartyPlatforms.exceptions import PlatformDoesNotExist
+
+try
+    # Import platform
+    Platform = ImportPlatform(platform_name="platform_name")
+
+    # get platform information
+    platform_information = Platform.info
+
+except PlatformDoesNotExist as error:
+    # Do something
+
+except Exception as error:
+    # Do something
+```
+
 ## Exceptions
+
+- **PlatformDoesNotExist**: Exception raised when Platform is not Found.
+
+  _return:_ String
 
 ## Licensing
 

@@ -15,7 +15,7 @@ credentials_filepath = os.environ["GMAIL_CREDENTIALS"]
 
 if not os.path.exists(credentials_filepath):
     error = "Gmail credentials.json file not found at %s" % credentials_filepath
-    raise FileNotFoundError(error)
+    logger.warning(error)
 
 
 class exceptions:
