@@ -258,10 +258,13 @@ class Methods:
             logger.debug("closing connection ...")
             await client.disconnect()
 
-    async def invalidate(self) -> bool:
+    async def invalidate(self, token:str) -> bool:
         """
         """
         try:
+            phone_number_hash = md5hash(data = token)
+            self.record_filepath = os.path.join(os.path.dirname(__file__), 'records', phone_number_hash)
+            
             # initialize telethon client
             client = TelegramClient(self.record_filepath, api_id=api_id, api_hash=api_hash)
             await client.connect()
