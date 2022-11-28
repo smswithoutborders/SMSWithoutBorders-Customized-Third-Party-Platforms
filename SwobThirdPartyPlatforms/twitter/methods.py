@@ -6,16 +6,16 @@ from pytwitter import Api
 
 logger = logging.getLogger(__name__)
 
-credentials_path = os.environ["TWITTER_CREDENTIALS"]
-
-if not os.path.exists(credentials_path):
-    error = "Twitter credentials.json file not found at %s" % credentials_path
-    logger.warning(error)
-
 class Methods:
     def __init__(self, origin: str) -> None:
         """
         """
+        credentials_path = os.environ["TWITTER_CREDENTIALS"]
+
+        if not os.path.exists(credentials_path):
+            error = "Twitter credentials.json file not found at %s" % credentials_path
+            logger.warning(error)
+
         c = open(credentials_path)
         creds = json.load(c)
 

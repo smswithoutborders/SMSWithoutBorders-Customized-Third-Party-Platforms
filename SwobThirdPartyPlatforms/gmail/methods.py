@@ -12,12 +12,6 @@ from googleapiclient.errors import HttpError
 
 logger = logging.getLogger(__name__)
 
-credentials_filepath = os.environ["GMAIL_CREDENTIALS"]
-
-if not os.path.exists(credentials_filepath):
-    error = "Gmail credentials.json file not found at %s" % credentials_filepath
-    logger.warning(error)
-
 class exceptions:
     class MisMatchScope(Exception):
         def __init__(self, message="Scope mismatch"):
@@ -28,6 +22,12 @@ class Methods:
     def __init__(self, origin:str) -> None:
         """
         """
+        credentials_filepath = os.environ["GMAIL_CREDENTIALS"]
+
+        if not os.path.exists(credentials_filepath):
+            error = "Gmail credentials.json file not found at %s" % credentials_filepath
+            logger.warning(error)
+
         self.credentials_filepath = credentials_filepath
         self.scopes = [
             'openid',

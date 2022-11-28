@@ -18,12 +18,6 @@ from telethon import types
 
 logger = logging.getLogger(__name__)
 
-credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
-
-if not os.path.exists(credentials_path):
-    error = "Telegram credentials.json file not found at %s" % credentials_path
-    logger.warning(error)
-
 class exceptions:
     class RegisterAccountError(Exception):
         def __init__(self, message="No account"):
@@ -59,6 +53,12 @@ class Methods:
     def __init__(self, identifier) -> None:
         """
         """
+        credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
+
+        if not os.path.exists(credentials_path):
+            error = "Telegram credentials.json file not found at %s" % credentials_path
+            logger.warning(error)
+
         c = open(credentials_path)
         creds = json.load(c)
         self.api_id = creds['api_id']
