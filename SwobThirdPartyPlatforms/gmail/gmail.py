@@ -28,7 +28,7 @@ def __get_service__(user_details: dict):
 
     logging.debug("user_details: %s", user_details)
     creds = Credentials.from_authorized_user_info(
-            user_details["token"], user_details["token"]["scope"])
+            user_details["token"], user_details["token"]["scopes"])
 
     if not creds or not creds.valid:
 
