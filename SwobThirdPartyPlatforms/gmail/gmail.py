@@ -136,14 +136,14 @@ def execute(body: str, user_details: dict) -> None:
 
             user_details["token"]["client_secret"] = client_secret
 
-            user_details["token"]["scope"] = \
-                    user_details["token"]["scope"].replace("openid ", '')
+            user_details["token"]["scopes"] = \
+                    user_details["token"]["scopes"].replace("openid ", '')
 
-            user_details["token"]["scope"] = \
-                    user_details["token"]["scope"].split(' ')
+            user_details["token"]["scopes"] = \
+                    user_details["token"]["scopes"].split(' ')
 
             user_tokens = user_details["token"]
-            user_token_scopes = user_details["token"]["scope"]
+            user_token_scopes = user_details["token"]["scopes"]
 
             sender_email = user_details["uniqueId"]
             sender_name = user_details["username"]
