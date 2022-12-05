@@ -148,8 +148,7 @@ def execute(body: str, user_details: dict) -> None:
             user_token_scopes = user_details["token"]["scopes"]
 
             sender_email = user_details["uniqueId"]
-            # sender_name = user_details["username"]
-            sender_name = None
+            sender_name = user_details["username"]
 
             service = __get_service__(user_details)
             send(
