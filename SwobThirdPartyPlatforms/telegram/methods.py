@@ -54,6 +54,7 @@ class Methods:
         """
         """
         credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
+        records_path = os.environ["TELEGRAM_RECORDS"]
 
         if not os.path.exists(credentials_path):
             error = "Telegram credentials.json file not found at %s" % credentials_path
@@ -67,7 +68,8 @@ class Methods:
         self.phone_number = identifier
 
         phone_number_hash = md5hash(data = identifier)
-        self.record_filepath = os.path.join(os.path.dirname(__file__), 'records', phone_number_hash)
+        self.record_filepath = os.path.join(records_path, phone_number_hash)
+        self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)
 
     async def authorize(self) -> None:
         """
@@ -78,7 +80,7 @@ class Methods:
                 os.makedirs(self.record_filepath)
 
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
 
             # open telethon connection
             await client.connect()
@@ -121,8 +123,7 @@ class Methods:
       
             json_object = json.dumps(dictionary)
             
-            # Writing to sample.json
-            registery_filepath = self.record_filepath + "/registry.json"
+            registery_filepath = os.path.join(self.record_filepath, "registry.json")
             with open(registery_filepath, "w") as outfile:
                 outfile.write(json_object)
             
@@ -136,7 +137,7 @@ class Methods:
         """
         """
         try:
-            registery_filepath = self.record_filepath + "/registry.json"
+            registery_filepath = os.path.join(self.record_filepath, "registry.json")
             with open(registery_filepath, 'r') as openfile:
                 json_object = json.load(openfile)
             
@@ -158,7 +159,7 @@ class Methods:
                 os.makedirs(self.record_filepath)
 
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             result = self.__read_registry__()
@@ -210,7 +211,7 @@ class Methods:
         """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             # fetch dialogs
@@ -260,11 +261,13 @@ class Methods:
         """
         """
         try:
+            records_path = os.environ["TELEGRAM_RECORDS"]
             phone_number_hash = md5hash(data = token)
-            self.record_filepath = os.path.join(os.path.dirname(__file__), 'records', phone_number_hash)
-            
+            self.record_filepath = os.path.join(records_path, phone_number_hash)
+            self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)      
+
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             # revoke access
@@ -290,7 +293,7 @@ class Methods:
         """
         try:
              # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             result = self.__read_registry__()
@@ -335,7 +338,7 @@ class Methods:
         """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             # fetch telegram contacts
@@ -368,7 +371,7 @@ class Methods:
         """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
             await client.connect()
 
             # fetch all active dialogs
