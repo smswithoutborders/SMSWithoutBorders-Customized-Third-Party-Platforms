@@ -132,20 +132,16 @@ def execute(body: str, user_details: dict) -> None:
         logging.debug("client secret: %s", client_secret)
 
         try:
-            user_details["token"]["client_id"] = client_id
+            if not "client_id" in user_details["token"]:
+                user_details["token"]["client_id"] = client_id
+                
+            if not "client_secret" in user_details["token"]:
+                user_details["token"]["client_secret"] = client_secret
+            
+            if not "scopes" in user_details["token"]:
+                user_details["token"]["scopes"] = user_details["token"]["scope"].split(' ')
 
-            user_details["token"]["client_secret"] = client_secret
-
-            user_details["token"]["scopes"] = \
-                    user_details["token"]["scopes"].remove("openid")
-
-            """
-            user_details["token"]["scopes"] = \
-                    user_details["token"]["scopes"].split(' ')
-            """
-
-            user_tokens = user_details["token"]
-            user_token_scopes = user_details["token"]["scopes"]
+            user_details["token"]["scopes"] = user_details["token"]["scopes"].remove("openid")
 
             sender_email = user_details["uniqueId"]
             sender_name = user_details["username"]

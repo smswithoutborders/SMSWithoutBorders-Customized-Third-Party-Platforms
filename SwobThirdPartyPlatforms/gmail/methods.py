@@ -98,7 +98,7 @@ class Methods:
         """
         try:
             try:
-                creds_fd = open(credentials_filepath)
+                creds_fd = open(self.credentials_filepath)
                 credentials = json.load( creds_fd )
                 client_id = credentials["web"]["client_id"]
                 client_secret = credentials["web"]["client_secret"]
