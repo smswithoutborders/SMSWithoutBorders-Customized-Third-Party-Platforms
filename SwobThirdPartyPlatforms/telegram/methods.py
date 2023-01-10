@@ -78,6 +78,13 @@ class Methods:
             if not os.path.exists(self.record_filepath):
                 logging.debug("- creating user file: %s", self.record_filepath)
                 os.makedirs(self.record_filepath)
+            
+            else: 
+                logger.debug("deleting draft record '%s' and deps ..." % self.record_filepath)
+                shutil.rmtree(self.record_filepath)
+
+                logging.debug("- creating user file: %s", self.record_filepath)
+                os.makedirs(self.record_filepath)
 
             # initialize telethon client
             client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
