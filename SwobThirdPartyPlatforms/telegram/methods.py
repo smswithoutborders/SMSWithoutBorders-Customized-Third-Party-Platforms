@@ -18,6 +18,7 @@ from telethon import types
 
 logger = logging.getLogger(__name__)
 
+
 class exceptions:
     class RegisterAccountError(Exception):
         def __init__(self, message="No account"):
@@ -39,20 +40,20 @@ class exceptions:
             self.message = message
             super().__init__(self.message)
 
-def md5hash( data: str) -> str:
-    """
-    """
+
+def md5hash(data: str) -> str:
+    """ """
     try:
         return hashlib.md5(data.encode("utf-8")).hexdigest()
     except Exception as error:
         raise error
 
+
 class Methods:
-    """
-    """
+    """ """
+
     def __init__(self, identifier) -> None:
-        """
-        """
+        """ """
         credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
         records_path = os.environ["TELEGRAM_RECORDS"]
 
@@ -62,32 +63,35 @@ class Methods:
 
         c = open(credentials_path)
         creds = json.load(c)
-        self.api_id = creds['api_id']
-        self.api_hash = creds['api_hash']
+        self.api_id = creds["api_id"]
+        self.api_hash = creds["api_hash"]
 
         self.phone_number = identifier
 
-        phone_number_hash = md5hash(data = identifier)
+        phone_number_hash = md5hash(data=identifier)
         self.record_filepath = os.path.join(records_path, phone_number_hash)
         self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)
 
     async def authorize(self) -> None:
-        """
-        """
+        """ """
         try:
             if not os.path.exists(self.record_filepath):
                 logging.debug("- creating user file: %s", self.record_filepath)
                 os.makedirs(self.record_filepath)
-            
-            else: 
-                logger.debug("deleting draft record '%s' and deps ..." % self.record_filepath)
+
+            else:
+                logger.debug(
+                    "deleting draft record '%s' and deps ..." % self.record_filepath
+                )
                 shutil.rmtree(self.record_filepath)
 
                 logging.debug("- creating user file: %s", self.record_filepath)
                 os.makedirs(self.record_filepath)
 
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
 
             # open telethon connection
             await client.connect()
@@ -96,8 +100,8 @@ class Methods:
             # check if record has session already
             if not await client.is_user_authorized():
                 # send out authorization code
-                result = await client.send_code_request(phone=self.phone_number, force_sms=True)
-                
+                result = await client.send_code_request(phone=self.phone_number)
+
                 # writing phone_code_hash to registry
                 self.__write_registry__(phone_code_hash=result.phone_code_hash)
                 logger.info("- authentication code sent to: %s", self.phone_number)
@@ -118,36 +122,30 @@ class Methods:
             # close telethon connection
             await client.disconnect()
 
-    def __write_registry__(self, phone_code_hash: str, code: str = None)->None:
-        """
-        """
+    def __write_registry__(self, phone_code_hash: str, code: str = None) -> None:
+        """ """
         try:
             # Data to be written
-            dictionary ={
-                "code" : code,
-                "phone_code_hash" : phone_code_hash
-            }
-      
+            dictionary = {"code": code, "phone_code_hash": phone_code_hash}
+
             json_object = json.dumps(dictionary)
-            
+
             registery_filepath = os.path.join(self.record_filepath, "registry.json")
             with open(registery_filepath, "w") as outfile:
                 outfile.write(json_object)
-            
+
             return True
 
         except Exception as error:
             raise error
 
-
     def __read_registry__(self) -> None:
-        """
-        """
+        """ """
         try:
             registery_filepath = os.path.join(self.record_filepath, "registry.json")
-            with open(registery_filepath, 'r') as openfile:
+            with open(registery_filepath, "r") as openfile:
                 json_object = json.load(openfile)
-            
+
             os.remove(registery_filepath)
             logger.debug("- removed user registery file: %s", registery_filepath)
 
@@ -155,42 +153,42 @@ class Methods:
 
         except Exception as error:
             raise error
-    
 
     async def validate(self, code: str) -> dict:
-        """
-        """
+        """ """
         try:
             # check if record exists
             if not os.path.exists(self.record_filepath):
                 os.makedirs(self.record_filepath)
 
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             result = self.__read_registry__()
 
             # validate code
-            await client.sign_in(self.phone_number, 
-                    code=code, phone_code_hash=result["phone_code_hash"])
+            await client.sign_in(
+                self.phone_number, code=code, phone_code_hash=result["phone_code_hash"]
+            )
             logger.info("- Code validation successful")
-            
+
             # get user profile info
             logger.debug("Fetching user's info ...")
             me = await client.get_me()
 
             return {
                 "token": json.dumps(self.phone_number),
-                "profile": {
-                    "name": me.first_name,
-                    "unique_id": self.phone_number
-                }
+                "profile": {"name": me.first_name, "unique_id": self.phone_number},
             }
 
         except PhoneNumberUnoccupiedError as error:
             logger.error("%s has no account" % self.phone_number)
-            self.__write_registry__(code=code, phone_code_hash=result["phone_code_hash"])
+            self.__write_registry__(
+                code=code, phone_code_hash=result["phone_code_hash"]
+            )
             raise exceptions.RegisterAccountError()
         except PhoneCodeInvalidError as error:
             logger.error("The phone code entered was invalid")
@@ -212,13 +210,13 @@ class Methods:
             logger.debug("closing connection ...")
             await client.disconnect()
 
-
     async def message(self, recipient: str, text: str) -> bool:
-        """
-        """
+        """ """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             # fetch dialogs
@@ -264,17 +262,20 @@ class Methods:
             logger.debug("closing connection ...")
             await client.disconnect()
 
-    async def invalidate(self, token:str) -> bool:
-        """
-        """
+    async def invalidate(self, token: str) -> bool:
+        """ """
         try:
             records_path = os.environ["TELEGRAM_RECORDS"]
-            phone_number_hash = md5hash(data = token)
+            phone_number_hash = md5hash(data=token)
             self.record_filepath = os.path.join(records_path, phone_number_hash)
-            self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)      
+            self.record_db_filepath = os.path.join(
+                self.record_filepath, phone_number_hash
+            )
 
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             # revoke access
@@ -285,7 +286,7 @@ class Methods:
             shutil.rmtree(self.record_filepath)
 
             logger.info("- Successfully revoked access")
-        
+
             return True
 
         except Exception as error:
@@ -296,31 +297,35 @@ class Methods:
             await client.disconnect()
 
     async def register(self, first_name: str, last_name: str) -> dict:
-        """
-        """
+        """ """
         try:
-             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            # initialize telethon client
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             result = self.__read_registry__()
 
             # validate code
             logger.debug("creating account for %s ..." % self.phone_number)
-            await client.sign_up(code=result["code"], first_name=first_name, last_name=last_name, phone=f"{self.phone_number}", phone_code_hash=result["phone_code_hash"])
+            await client.sign_up(
+                code=result["code"],
+                first_name=first_name,
+                last_name=last_name,
+                phone=f"{self.phone_number}",
+                phone_code_hash=result["phone_code_hash"],
+            )
 
             logger.info("- Account successfully created")
-            
+
             # get user profile info
             logger.debug("Fetching user's info ...")
             me = await client.get_me()
 
             return {
                 "token": json.dumps(self.phone_number),
-                "profile": {
-                    "name": me.first_name,
-                    "unique_id": self.phone_number
-                }
+                "profile": {"name": me.first_name, "unique_id": self.phone_number},
             }
 
         except PhoneCodeInvalidError as error:
@@ -341,29 +346,32 @@ class Methods:
             await client.disconnect()
 
     async def contacts(self) -> list:
-        """
-        """
+        """ """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             # fetch telegram contacts
             contacts = []
-            
+
             logger.debug("Fetching telegram contacts for %s ..." % self.phone_number)
             result = await client(functions.contacts.GetContactsRequest(hash=0))
             for user in result.users:
-                contacts.append({
-                    "id": user.id,
-                    "phone": user.phone,
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name
-                })
+                contacts.append(
+                    {
+                        "id": user.id,
+                        "phone": user.phone,
+                        "username": user.username,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    }
+                )
 
             logger.info("- Successfully fetched all telegram contacts")
-        
+
             return contacts
 
         except Exception as error:
@@ -374,33 +382,38 @@ class Methods:
             await client.disconnect()
 
     async def dialogs(self) -> list:
-        """
-        """
+        """ """
         try:
             # initialize telethon client
-            client = TelegramClient(self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash)
+            client = TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            )
             await client.connect()
 
             # fetch all active dialogs
             dialogs = []
-            
+
             logger.debug("Fetching all active dialogs for %s ..." % self.phone_number)
-            result = await client.get_dialogs()        
+            result = await client.get_dialogs()
             for dialog in result:
-                dialogs.append({
-                    "name": dialog.name,
-                    "id": dialog.entity.id,
-                    "message": {
-                        "id": dialog.message.id,
-                        "text": dialog.message.message,
-                        "date":dialog.message.date
-                    },
-                    "date": dialog.date,
-                    "type": "chat" if not hasattr(dialog.entity, "title") else "channel"
-                })
+                dialogs.append(
+                    {
+                        "name": dialog.name,
+                        "id": dialog.entity.id,
+                        "message": {
+                            "id": dialog.message.id,
+                            "text": dialog.message.message,
+                            "date": dialog.message.date,
+                        },
+                        "date": dialog.date,
+                        "type": "chat"
+                        if not hasattr(dialog.entity, "title")
+                        else "channel",
+                    }
+                )
 
             logger.info("- Successfully fetched all active dialogs")
-        
+
             return dialogs
 
         except Exception as error:
