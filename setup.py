@@ -1,19 +1,28 @@
-import os
+"""
+SwobThirdPartyPlatforms setup file.
+
+This file defines the package metadata and dependencies for the SwobThirdPartyPlatforms package.
+
+Author: Afkanerd <developers@smswithoutborders.com>
+License: GNU General Public License v3.0
+"""
+
 from setuptools import find_packages, setup
 
-f = open(os.path.join(os.path.dirname(__file__), "README.md"))
-readme = f.read()
-f.close()
+with open("README.md", "r", encoding="utf-8") as file_:
+    readme = file_.read()
 
 setup(
     name="SwobThirdPartyPlatforms",
-    packages=find_packages(),
-    version="0.1.1",
-    description="SMSWithoutBorders Third-Party Platforms library",
+    version="0.2.0",
+    description="SMSWithoutBorders Third-Party Platforms Library",
     long_description=readme,
+    long_description_content_type="text/markdown",
     author="Afkanerd",
     author_email="developers@smswithoutborders.com",
-    license="The GNU General Public License v3.0",
+    license="GNU General Public License v3.0",
+    packages=find_packages(),
+    package_data={"": ["info.json", "*-icon.svg"]},
     install_requires=[
         "requests~=2.28.1",
         "google-api-python-client~=2.66.0",
@@ -23,7 +32,5 @@ setup(
         "python-twitter-v2~=0.7.7",
         "tweepy~=4.8.0",
     ],
-    package_data={"": ["info.json", "*-icon.svg"]},
-    include_package_data=True,
     test_suite="tests",
 )
