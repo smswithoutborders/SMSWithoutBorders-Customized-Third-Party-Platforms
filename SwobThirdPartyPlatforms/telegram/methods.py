@@ -14,6 +14,7 @@ from telethon.errors import (
     PhoneCodeExpiredError,
     SessionPasswordNeededError,
     FloodWaitError,
+    PasswordHashInvalidError,
 )
 
 
@@ -27,6 +28,7 @@ class exceptions:
     PhoneCodeExpiredError = PhoneCodeExpiredError
     SessionPasswordNeededError = SessionPasswordNeededError
     FloodWaitError = FloodWaitError
+    PasswordHashInvalidError = PasswordHashInvalidError
 
     class SessionExistError(Exception):
         """
@@ -403,9 +405,7 @@ class Methods:
 
             # validate code with password
             await client.sign_in(
-                self.phone_number,
                 password=password,
-                code=registry_data["code"],
                 phone_code_hash=registry_data["phone_code_hash"],
             )
 
@@ -428,13 +428,9 @@ class Methods:
             logging.error("%s has no account", self.phone_number)
             raise error
 
-        except PhoneCodeInvalidError as error:
-            logging.error("The phone code entered was invalid")
+        except PasswordHashInvalidError as error:
+            logging.error("The password (and thus its hash value) entered is invalid")
             self.__write_registry__(phone_code_hash=registry_data["phone_code_hash"])
-            raise error
-
-        except PhoneCodeExpiredError as error:
-            logging.error("The confirmation code has expired")
             raise error
 
         except FloodWaitError as error:
