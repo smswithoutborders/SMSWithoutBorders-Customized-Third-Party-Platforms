@@ -1,48 +1,52 @@
+"""Telegram Methods Module"""
+
 import logging
 import os
 import shutil
 import json
 import hashlib
 
-from telethon import TelegramClient
+from telethon import TelegramClient, functions
 
-from telethon.errors import PhoneNumberUnoccupiedError
-from telethon.errors import PhoneCodeInvalidError
-from telethon.errors import PhoneCodeExpiredError
-from telethon.errors import SessionPasswordNeededError
-from telethon.errors import FloodWaitError
-
-from telethon.tl.types import InputPhoneContact
-from telethon import functions
-from telethon import types
-
-logger = logging.getLogger(__name__)
+from telethon.errors import (
+    PhoneNumberUnoccupiedError,
+    PhoneCodeInvalidError,
+    PhoneCodeExpiredError,
+    SessionPasswordNeededError,
+    FloodWaitError,
+)
 
 
-class exceptions:
-    class RegisterAccountError(Exception):
-        def __init__(self, message="No account"):
-            self.message = message
-            super().__init__(self.message)
+class SessionExistError(Exception):
+    """
+    Exception raised when a duplicate session is detected.
 
-    class SessionExistError(Exception):
-        def __init__(self, message="Duplicate sessions"):
-            self.message = message
-            super().__init__(self.message)
+    Args:
+        message (str): An optional message to include in the exception. Defaults to "Duplicate sessions".
 
-    class InvalidCodeError(Exception):
-        def __init__(self, message="Invalid verification code"):
-            self.message = message
-            super().__init__(self.message)
+    Attributes:
+        message (str): The message included in the exception.
 
-    class TooManyRequests(Exception):
-        def __init__(self, message="Too many requests"):
-            self.message = message
-            super().__init__(self.message)
+    Methods:
+        __init__(self, message="Duplicate sessions"): Initializes the SessionExistError object with the given message.
+    """
+
+    def __init__(self, message="Duplicate sessions"):
+        self.message = message
+        super().__init__(self.message)
 
 
 def md5hash(data: str) -> str:
-    """ """
+    """
+    Hashes the given string using the MD5 algorithm.
+
+    Args:
+        data (str): The string to be hashed.
+
+    Returns:
+        str: The resulting MD5 hash in hexadecimal format.
+
+    """
     try:
         return hashlib.md5(data.encode("utf-8")).hexdigest()
     except Exception as error:
@@ -50,21 +54,47 @@ def md5hash(data: str) -> str:
 
 
 class Methods:
-    """ """
+    """
+    A collection of methods for interacting with the Telegram API.
 
-    def __init__(self, identifier) -> None:
-        """ """
-        credentials_path = os.environ["TELEGRAM_CREDENTIALS"]
-        records_path = os.environ["TELEGRAM_RECORDS"]
+    Args:
+        identifier (str): The identifier associated with the Telegram account.
+
+    Attributes:
+        api_id (str): The API ID for the Telegram account.
+        api_hash (str): The API hash for the Telegram account.
+        phone_number (str): The phone number associated with the Telegram account.
+        record_filepath (str): The file path for the record of the Telegram account.
+        record_db_filepath (str): The file path for the database record of the Telegram account.
+
+    Raises:
+        KeyError: If the required environment variables are not set.
+    """
+
+    def __init__(self, identifier: str) -> None:
+        """
+        Initializes a new instance of the Methods class.
+
+        Args:
+            identifier (str): The identifier associated with the Telegram account.
+        """
+        credentials_path = os.environ.get("TELEGRAM_CREDENTIALS")
+        records_path = os.environ.get("TELEGRAM_RECORDS")
+
+        if not credentials_path:
+            raise KeyError("TELEGRAM_CREDENTIALS environment variable not set.")
+        if not records_path:
+            raise KeyError("TELEGRAM_RECORDS environment variable not set.")
 
         if not os.path.exists(credentials_path):
-            error = "Telegram credentials.json file not found at %s" % credentials_path
-            logger.warning(error)
+            logging.warning(
+                "Telegram credentials file not found at %s", credentials_path
+            )
 
-        c = open(credentials_path)
-        creds = json.load(c)
-        self.api_id = creds["api_id"]
-        self.api_hash = creds["api_hash"]
+        with open(credentials_path, "r", encoding="utf-8") as file_:
+            creds = json.load(file_)
+            self.api_id = creds["api_id"]
+            self.api_hash = creds["api_hash"]
 
         self.phone_number = identifier
 
@@ -72,353 +102,394 @@ class Methods:
         self.record_filepath = os.path.join(records_path, phone_number_hash)
         self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)
 
-    async def authorize(self) -> None:
-        """ """
+    def __write_registry__(self, phone_code_hash: str, code: str = None) -> bool:
+        """
+        Write phone code hash and code to registry file in JSON format.
+
+        Args:
+            phone_code_hash (str): Phone code hash to write to registry.
+            code (str, optional): Code to write to registry. Defaults to None.
+
+        Raises:
+            Exception: If an error occurs while writing to registry file.
+
+        Returns:
+            bool: True if data was written successfully, False otherwise.
+        """
         try:
-            if not os.path.exists(self.record_filepath):
-                logging.debug("- creating user file: %s", self.record_filepath)
-                os.makedirs(self.record_filepath)
+            # Create dictionary with data to write to registry
+            data = {"code": code, "phone_code_hash": phone_code_hash}
 
-            else:
-                logger.debug(
-                    "deleting draft record '%s' and deps ..." % self.record_filepath
-                )
-                shutil.rmtree(self.record_filepath)
+            # Convert dictionary to JSON format
+            json_data = json.dumps(data)
 
-                logging.debug("- creating user file: %s", self.record_filepath)
-                os.makedirs(self.record_filepath)
-
-            # initialize telethon client
-            client = TelegramClient(
-                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-
-            # open telethon connection
-            await client.connect()
-            logging.debug("- connection created")
-
-            # check if record has session already
-            if not await client.is_user_authorized():
-                # send out authorization code
-                result = await client.send_code_request(phone=self.phone_number)
-
-                # writing phone_code_hash to registry
-                self.__write_registry__(phone_code_hash=result.phone_code_hash)
-                logger.info("- authentication code sent to: %s", self.phone_number)
-
-            else:
-                logger.error("Session already exist")
-                raise exceptions.SessionExistError()
-
-        except exceptions.SessionExistError:
-            raise exceptions.SessionExistError()
-        except FloodWaitError as error:
-            logger.error(error)
-            raise exceptions.TooManyRequests()
-        except Exception as error:
-            raise error
-
-        finally:
-            # close telethon connection
-            await client.disconnect()
-
-    def __write_registry__(self, phone_code_hash: str, code: str = None) -> None:
-        """ """
-        try:
-            # Data to be written
-            dictionary = {"code": code, "phone_code_hash": phone_code_hash}
-
-            json_object = json.dumps(dictionary)
-
-            registery_filepath = os.path.join(self.record_filepath, "registry.json")
-            with open(registery_filepath, "w") as outfile:
-                outfile.write(json_object)
+            # Write JSON data to registry file
+            registry_filepath = os.path.join(self.record_filepath, "registry.json")
+            with open(registry_filepath, "w", encoding="utf-8") as outfile:
+                outfile.write(json_data)
 
             return True
 
         except Exception as error:
+            logging.error("An error occurred while writting registry file.")
             raise error
 
-    def __read_registry__(self) -> None:
-        """ """
+    def __read_registry__(self) -> dict:
+        """Read the user registry file and return the contents as a dictionary."""
+
         try:
-            registery_filepath = os.path.join(self.record_filepath, "registry.json")
-            with open(registery_filepath, "r") as openfile:
-                json_object = json.load(openfile)
+            registry_filepath = os.path.join(self.record_filepath, "registry.json")
 
-            os.remove(registery_filepath)
-            logger.debug("- removed user registery file: %s", registery_filepath)
+            with open(registry_filepath, "r", encoding="utf-8") as file_:
+                json_content = json.load(file_)
 
-            return json_object
+            os.remove(registry_filepath)
+            logging.debug("- removed user registry file: %s", registry_filepath)
+
+            return json_content
 
         except Exception as error:
+            logging.error("An error occurred while reading registry file.")
+            raise error
+
+    async def authorize(self) -> None:
+        """Connects to the Telegram API, creates a user file, and sends an
+        authorization code request to the specified phone number.
+
+        Args:
+            self: An instance of the Methods class.
+
+        Returns:
+            None.
+        """
+
+        # Check if user file already exists and create it if not
+        if not os.path.exists(self.record_filepath):
+            logging.debug("- creating user file: %s", self.record_filepath)
+            os.makedirs(self.record_filepath)
+
+        else:
+            logging.debug(
+                "deleting draft record '%s' and deps ...", self.record_filepath
+            )
+            shutil.rmtree(self.record_filepath)
+
+            logging.debug("- creating user file: %s", self.record_filepath)
+            os.makedirs(self.record_filepath)
+
+        try:
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
+                self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
+            ) as client:
+                # Check if session already exists
+                if await client.is_user_authorized():
+                    logging.error("Session already exists")
+                    raise SessionExistError()
+
+                # Send authorization code request and write phone_code_hash to registry
+                result = await client.send_code_request(phone=self.phone_number)
+                self.__write_registry__(phone_code_hash=result.phone_code_hash)
+                logging.info("- authentication code sent to: %s", self.phone_number)
+
+        except FloodWaitError as error:
+            raise error
+
+        except Exception as error:
+            logging.error("An error occurred while authorizing.")
             raise error
 
     async def validate(self, code: str) -> dict:
-        """ """
+        """Validate the given phone number confirmation code.
+
+        Args:
+            code (str): The phone number confirmation code to validate.
+
+        Returns:
+            dict: A dictionary containing the user's token and profile information.
+        """
+        # Check if user file already exists and create it if not
+        if not os.path.exists(self.record_filepath):
+            logging.debug("- creating user file: %s", self.record_filepath)
+            os.makedirs(self.record_filepath)
+
         try:
-            # check if record exists
-            if not os.path.exists(self.record_filepath):
-                os.makedirs(self.record_filepath)
-
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                registry_data = self.__read_registry__()
 
-            result = self.__read_registry__()
+                # validate code
+                await client.sign_in(
+                    self.phone_number,
+                    code=code,
+                    phone_code_hash=registry_data["phone_code_hash"],
+                )
+                logging.info("- Code validation successful")
 
-            # validate code
-            await client.sign_in(
-                self.phone_number, code=code, phone_code_hash=result["phone_code_hash"]
-            )
-            logger.info("- Code validation successful")
+                # get user profile info
+                logging.debug("Fetching user's info ...")
+                user_data = await client.get_me()
 
-            # get user profile info
-            logger.debug("Fetching user's info ...")
-            me = await client.get_me()
-
-            return {
-                "token": json.dumps(self.phone_number),
-                "profile": {"name": me.first_name, "unique_id": self.phone_number},
-            }
+                return {
+                    "token": json.dumps(self.phone_number),
+                    "profile": {
+                        "name": user_data.first_name,
+                        "unique_id": self.phone_number,
+                    },
+                }
 
         except PhoneNumberUnoccupiedError as error:
-            logger.error("%s has no account" % self.phone_number)
-            self.__write_registry__(
-                code=code, phone_code_hash=result["phone_code_hash"]
-            )
-            raise exceptions.RegisterAccountError()
+            logging.error("%s has no account", self.phone_number)
+            raise error
+
         except PhoneCodeInvalidError as error:
-            logger.error("The phone code entered was invalid")
-            self.__write_registry__(phone_code_hash=result["phone_code_hash"])
-            raise exceptions.InvalidCodeError()
+            logging.error("The phone code entered was invalid")
+            self.__write_registry__(phone_code_hash=registry_data["phone_code_hash"])
+            raise error
+
         except PhoneCodeExpiredError as error:
-            logger.error("The confirmation code has expired")
-            raise exceptions.InvalidCodeError()
+            logging.error("The confirmation code has expired")
+            raise error
+
         except SessionPasswordNeededError as error:
-            logger.error("two-steps verification is enabled and a password is required")
+            logging.error(
+                "two-steps verification is enabled and a password is required"
+            )
+            self.__write_registry__(
+                code=code, phone_code_hash=registry_data["phone_code_hash"]
+            )
             raise error
+
         except FloodWaitError as error:
-            logger.error(error)
-            raise exceptions.TooManyRequests()
-        except Exception as error:
+            wait_time = error.seconds
+            logging.error(
+                "Flood wait error occurred. Please try again in %s seconds.", wait_time
+            )
             raise error
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
+
+        except Exception as error:
+            logging.error("An error occurred while validating.")
+            raise error
 
     async def message(self, recipient: str, text: str) -> bool:
-        """ """
+        """
+        Sends a message to a recipient using the Telegram API.
+
+        Args:
+            recipient (str): The username or phone number of the recipient.
+            text (str): The text of the message to send.
+
+        Returns:
+            bool: True if the message was sent successfully, False otherwise.
+        """
         try:
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                # fetch dialogs
+                await self.dialogs()
 
-            # fetch dialogs
-            await self.dialogs()
+                # sent message
+                logging.debug("sending message to: %s...", recipient)
+                await client.send_message(recipient, text)
 
-            # sent message
-            logger.debug("sending message to: %s...", recipient)
-            await client.send_message(recipient, text)
+                logging.info("- Successfully sent message")
 
-            logger.info("- Successfully sent message")
-
-            """
-            except ValueError as error:
-                if str(error) == f'Cannot find any entity corresponding to "{recipient}"':
-                    logger.error(error)
-                    
-                    try:
-                        # add recipient to contact list
-                        logger.debug(f"adding {recipient} to contact list ...")
-                        contact = InputPhoneContact(random.randint(0, 9999), recipient, str(recipient), "")
-                        await client(functions.contacts.ImportContactsRequest([contact]))
-
-                        logger.info(f"Succesfully added {recipient} to contact list")
-                        
-                        # sent message
-                        logger.debug(f"sending message to {recipient} ...")
-                        await client.send_message(f"{recipient}", f"{text}")
-                        
-                        logger.info("- Successfully sent message")
-
-                        return True
-                    except ValueError as error:
-                        if str(error) == f'Cannot find any entity corresponding to "{recipient}"':
-                            logger.error(error)
-                            raise UnprocessableEntity()
-            """
         except Exception as error:
+            logging.error("An error occurred while sending a message.")
             raise error
-            # raise InternalServerError(error)
-
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
 
     async def invalidate(self, token: str) -> bool:
-        """ """
+        """
+        Revokes access for a Telegram user by logging them out and deleting their local data.
+
+        Args:
+            token (str): The user's access token.
+
+        Returns:
+            bool: True if access was revoked successfully, False otherwise.
+        """
+        phone_number_hash = md5hash(data=token)
+        self.record_filepath = os.path.join(
+            os.environ["TELEGRAM_RECORDS"], phone_number_hash
+        )
+        self.record_db_filepath = os.path.join(self.record_filepath, phone_number_hash)
+
         try:
-            records_path = os.environ["TELEGRAM_RECORDS"]
-            phone_number_hash = md5hash(data=token)
-            self.record_filepath = os.path.join(records_path, phone_number_hash)
-            self.record_db_filepath = os.path.join(
-                self.record_filepath, phone_number_hash
-            )
-
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                # revoke access
+                logging.debug("revoking %s access ...", self.phone_number)
+                await client.log_out()
 
-            # revoke access
-            logger.debug("revoking %s access ..." % self.phone_number)
-            await client.log_out()
-
-            logger.debug("deleting deps ...")
+            # delete files
+            logging.debug("deleting files ...")
             shutil.rmtree(self.record_filepath)
 
-            logger.info("- Successfully revoked access")
-
+            logging.info("- Successfully revoked access")
             return True
 
         except Exception as error:
-            raise error
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
+            logging.error("An error occurred while invalidating.\n\n%s", str(error))
+            return False
 
-    async def register(self, first_name: str, last_name: str) -> dict:
-        """ """
+    async def validate_with_password(self, password: str) -> dict:
+        """Validate the given phone number confirmation code with password.
+
+        Args:
+            password (str): The user's password.
+
+        Returns:
+            dict: A dictionary containing the user's token and profile information.
+        """
         try:
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                registry_data = self.__read_registry__()
 
-            result = self.__read_registry__()
+                # validate code with password
+                await client.sign_in(
+                    self.phone_number,
+                    password=password,
+                    code=registry_data["code"],
+                    phone_code_hash=registry_data["phone_code_hash"],
+                )
 
-            # validate code
-            logger.debug("creating account for %s ..." % self.phone_number)
-            await client.sign_up(
-                code=result["code"],
-                first_name=first_name,
-                last_name=last_name,
-                phone=f"{self.phone_number}",
-                phone_code_hash=result["phone_code_hash"],
-            )
+                logging.info("- Code validation with password successful")
 
-            logger.info("- Account successfully created")
+                # get user profile info
+                logging.debug("Fetching user's info ...")
+                user_data = await client.get_me()
 
-            # get user profile info
-            logger.debug("Fetching user's info ...")
-            me = await client.get_me()
+                # Return user profile info and token
+                return {
+                    "token": json.dumps(self.phone_number),
+                    "profile": {
+                        "name": user_data.first_name,
+                        "unique_id": self.phone_number,
+                    },
+                }
 
-            return {
-                "token": json.dumps(self.phone_number),
-                "profile": {"name": me.first_name, "unique_id": self.phone_number},
-            }
+        except PhoneNumberUnoccupiedError as error:
+            logging.error("%s has no account", self.phone_number)
+            raise error
 
         except PhoneCodeInvalidError as error:
-            logger.error("The phone code entered was invalid")
-            self.__write_registry__(phone_code_hash=result["phone_code_hash"])
-            raise exceptions.InvalidCodeError()
-        except PhoneCodeExpiredError as error:
-            logger.error("The confirmation code has expired")
-            raise exceptions.InvalidCodeError()
-        except FloodWaitError as error:
-            logger.error(error)
-            raise exceptions.TooManyRequests()
-        except Exception as error:
+            logging.error("The phone code entered was invalid")
+            self.__write_registry__(phone_code_hash=registry_data["phone_code_hash"])
             raise error
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
+
+        except PhoneCodeExpiredError as error:
+            logging.error("The confirmation code has expired")
+            raise error
+
+        except FloodWaitError as error:
+            wait_time = error.seconds
+            logging.error(
+                "Flood wait error occurred. Please try again in %s seconds.", wait_time
+            )
+            raise error
+
+        except Exception as error:
+            logging.error("An error occurred while validating with password")
+            raise error
 
     async def contacts(self) -> list:
-        """ """
+        """Fetches all telegram contacts.
+
+        Returns:
+            A list of dictionaries containing the following keys:
+            - id (int): The unique identifier of the contact
+            - phone (str): The phone number of the contact
+            - username (str): The username of the contact (if available)
+            - first_name (str): The first name of the contact
+            - last_name (str): The last name of the contact (if available)
+        """
         try:
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                # fetch telegram contacts
+                contacts = []
 
-            # fetch telegram contacts
-            contacts = []
-
-            logger.debug("Fetching telegram contacts for %s ..." % self.phone_number)
-            result = await client(functions.contacts.GetContactsRequest(hash=0))
-            for user in result.users:
-                contacts.append(
-                    {
-                        "id": user.id,
-                        "phone": user.phone,
-                        "username": user.username,
-                        "first_name": user.first_name,
-                        "last_name": user.last_name,
-                    }
+                logging.debug(
+                    "Fetching telegram contacts for %s ...", self.phone_number
                 )
+                result = await client(functions.contacts.GetContactsRequest(hash=0))
+                for user in result.users:
+                    contacts.append(
+                        {
+                            "id": user.id,
+                            "phone": user.phone,
+                            "username": user.username,
+                            "first_name": user.first_name,
+                            "last_name": user.last_name,
+                        }
+                    )
 
-            logger.info("- Successfully fetched all telegram contacts")
+                logging.info("- Successfully fetched all telegram contacts")
 
-            return contacts
+                return contacts
 
         except Exception as error:
+            logging.error("An error occurred while fetching contacts.")
             raise error
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
 
     async def dialogs(self) -> list:
-        """ """
+        """Fetches all Telegram dialogs.
+
+        Returns:
+            A list of dictionaries containing the following keys:
+            - name (str): The name of the dialog
+            - id (int): The unique identifier of the dialog entity
+            - message (dict): A dictionary containing the following keys:
+                - id (int): The unique identifier of the message
+                - text (str): The text of the message
+                - date (datetime.datetime): The date and time the message was sent
+            - date (datetime.datetime): The date and time the dialog was created
+            - type (str): The type of the dialog, which can be either "chat" or "channel"
+        """
         try:
-            # initialize telethon client
-            client = TelegramClient(
+            # Initialize Telethon client and connect to API
+            async with TelegramClient(
                 self.record_db_filepath, api_id=self.api_id, api_hash=self.api_hash
-            )
-            await client.connect()
+            ) as client:
+                # fetch all active dialogs
+                dialogs = []
 
-            # fetch all active dialogs
-            dialogs = []
-
-            logger.debug("Fetching all active dialogs for %s ..." % self.phone_number)
-            result = await client.get_dialogs()
-            for dialog in result:
-                dialogs.append(
-                    {
-                        "name": dialog.name,
-                        "id": dialog.entity.id,
-                        "message": {
-                            "id": dialog.message.id,
-                            "text": dialog.message.message,
-                            "date": dialog.message.date,
-                        },
-                        "date": dialog.date,
-                        "type": "chat"
-                        if not hasattr(dialog.entity, "title")
-                        else "channel",
-                    }
+                logging.debug(
+                    "Fetching all active dialogs for %s ...", self.phone_number
                 )
+                result = await client.get_dialogs()
+                for dialog in result:
+                    dialogs.append(
+                        {
+                            "name": dialog.name,
+                            "id": dialog.entity.id,
+                            "message": {
+                                "id": dialog.message.id,
+                                "text": dialog.message.message,
+                                "date": dialog.message.date,
+                            },
+                            "date": dialog.date,
+                            "type": "chat"
+                            if not hasattr(dialog.entity, "title")
+                            else "channel",
+                        }
+                    )
 
-            logger.info("- Successfully fetched all active dialogs")
+                logging.info("- Successfully fetched all active dialogs")
 
-            return dialogs
+                return dialogs
 
         except Exception as error:
+            logging.error("An error occurred while fetching dialogs.")
             raise error
-        finally:
-            # close telethon connection
-            logger.debug("closing connection ...")
-            await client.disconnect()
