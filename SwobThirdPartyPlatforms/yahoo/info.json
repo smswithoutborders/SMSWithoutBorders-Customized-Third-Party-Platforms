@@ -1,0 +1,11 @@
+{
+    "name": "yahoo",
+    "description": {
+        "en": "Yahoo! Mail is an email service offered by the American company Yahoo, Inc. The service is free for personal use, with an optional monthly fee for additional features. By storing access with us, you will be able to send emails by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+        "fr": "Yahoo! Mail est un service de messagerie proposé par la société américaine Yahoo, Inc. Le service est gratuit pour un usage personnel, avec des frais mensuels facultatifs pour des fonctionnalités supplémentaires. En stockant l'accès chez nous, vous pourrez envoyer des e-mails par SMS à l'aide de l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne."
+    },
+    "type": "email",
+    "logo": "/public/yahoo-icon.svg",
+    "protocols": ["oauth2"],
+    "letter": "y"
+}
