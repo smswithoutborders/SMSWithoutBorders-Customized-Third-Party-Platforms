@@ -19,16 +19,25 @@ logger = logging.getLogger(__name__)
 class exceptions:
     class MisMatchScope(Exception):
         def __init__(self, message="Scope mismatch"):
+            """
+            Exception raised when there is a scope mismatch.
+            """
             self.message = message
             super().__init__(self.message)
 
     class InvalidToken(Exception):
         def __init__(self, message="Invalid token provided"):
+            """
+            Exception raised when an invalid token is provided.
+            """
             self.message = message
             super().__init__(self.message)
 
     class EmptyToken(Exception):
         def __init__(self, message="No token provided"):
+            """
+            Exception raised when no token is provided.
+            """
             self.message = message
             super().__init__(self.message)
 
@@ -36,6 +45,13 @@ class exceptions:
 class Methods:
     def __init__(self, origin: str) -> None:
         """
+        Initialize the Methods class with the specified origin.
+
+        Args:
+            origin (str): The origin of the request.
+
+        Raises:
+            Warning: If Yahoo credentials.json file is not found at the specified path.
         """
         credentials_filepath = os.environ["YAHOO_CREDENTIALS"]
 
@@ -54,9 +70,9 @@ class Methods:
 
         self.scopes = [
             'openid',
-            # 'https://mail.yahoo.com',
             'profile',
-            'email'
+            'email',
+            'sdps-r'
         ]
 
         with open(self.credentials_filepath) as creds_fd:
@@ -71,8 +87,15 @@ class Methods:
             # client=BackendApplicationClient(client_id=self.client_id)
         )
 
-    def authorize(self) -> str:
+    def authorize(self) -> dict:
         """
+        Generate the authorization URL and state.
+
+        Returns:
+            dict: A dictionary containing the authorization URL and state.
+
+        Raises:
+            Exception: If the Yahoo OAuth initialization fails.
         """
         try:
             authorization_url, state = self.yahoo.authorization_url(
@@ -93,15 +116,27 @@ class Methods:
 
     def validate(self, code: str = None, state: str = None, redirect_response: str = None, scope: str = '') -> dict:
         """
+        Validate the authorization code or redirect response and obtain the token and user profile.
+
+        Args:
+            code (str, optional): The authorization code. Defaults to None.
+            state (str, optional): The state for protection against CSRF. Defaults to None.
+            redirect_response (str, optional): The redirect response. Defaults to None.
+            scope (str, optional): The requested scope. Defaults to ''.
+
+        Returns:
+            dict: A dictionary containing the token and user profile information.
+
+        Raises:
+            exceptions.MisMatchScope: If there is a scope mismatch.
+            ValueError: If the token is not obtained.
+            Exception: If Yahoo-OAuth2-validate fails.
         """
         try:
             for item in self.scopes:
                 if item not in scope.split(" "):
                     logger.error("Missing score %s" % item)
                     raise exceptions.MisMatchScope()
-
-            # redirect_response = input(
-            #     "Please paste the full redirect URL here: ")
 
             token = None
 
@@ -115,7 +150,6 @@ class Methods:
 
             if (token):
                 profile = self.yahoo.get(self.user_info_url)
-                # pprint(profile.json())
 
                 user_info = profile.json()
 
@@ -136,17 +170,24 @@ class Methods:
             logger.error('Yahoo-OAuth2-validate failed. See logs below')
             raise error
 
-    def refresh(self, refresh_token: str = None):
+    def refresh(self, refresh_token: str = None) -> dict:
         """
+        Refreshes the Yahoo OAuth token.
+
+        Args:
+            refresh_token (str, optional): The refresh token. Defaults to None.
+
+        Returns:
+            dict: A dictionary containing the refreshed token.
+
+        Raises:
+            exceptions.EmptyToken: If no token is provided.
         """
         try:
-            # refresh_token = input("enter refresh token: ")
             if refresh_token:
                 token = self.yahoo.refresh_token(
                     client_id=self.client_id, client_secret=self.client_secret, token_url=self.token_url, refresh_token=refresh_token)
                 logger.info("- Successfully refreshed token")
-
-                # pprint(token)
 
                 return {
                     "token": dict(token)
@@ -156,44 +197,45 @@ class Methods:
                 raise exceptions.EmptyToken()
 
         except Exception as error:
-            logger.error('Yahoo-OAuth2-validate failed. See logs below')
+            logger.error('Yahoo-OAuth2-refresh failed. See logs below')
             raise error
 
     def invalidate(self, token: dict = None) -> None:
         """
+        Invalidates the Yahoo OAuth token. The Yahoo team hasn't implemented this feature, so it won't work.
+
+        Args:
+            token (dict, optional): The token dictionary. Defaults to None.
+
+        Returns:
+            bool: True if token invalidation was successful
+        Raises:
+            ValueError: If the access token is not found.
         """
         try:
-            token: dict = json.loads(input("enter token: "))
-            # pprint(type(token))
-            # pprint(token)
-
-            encoded = base64.b64encode(
-                (self.client_id + ':' + self.client_secret).encode("utf-8"))
+            client_credentials = f"{self.client_id}:{self.client_secret}"
+            encoded_credentials = base64.b64encode(
+                client_credentials.encode("utf-8")).decode("utf-8")
 
             if 'access_token' in token:
-                # print(f'bearer {token["access_token"]}')
                 headers = {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    # 'Authorization': f'bearer {token["access_token"]}',
-                    'Authorization': f'Basic {encoded.decode("utf-8")}',
+                    "Authorization": f"Basic {encoded_credentials}"
                 }
-                # data = {'token': token['access_token']}
-                # revoke = requests.post(self.revoke_url, params={
-                #                        'token': token['access_token'],
-                #                        'client_id': self.client_id
-                #                        }, headers=headers)
+
+                data = {
+                    "token": token.get('access_token'),
+                    "token_type_hint": 'access_token'
+                }
 
                 revoke = self.yahoo.post(url=self.revoke_url,
-                                         client_id=self.client_id, client_secret=self.client_secret, headers=headers)
+                                         client_id=self.client_id, client_secret=self.client_secret, headers=headers, data=data)
 
                 status_code = revoke.status_code
-                print("status code: ", status_code)
                 if status_code == 200:
-                    print("Invalidated token")
                     logger.info("- Successfully revoked access")
                     return True
                 else:
-                    pprint(revoke.json())
                     raise Exception(revoke.reason)
             else:
 
