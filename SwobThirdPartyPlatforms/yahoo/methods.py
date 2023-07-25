@@ -1,13 +1,14 @@
 import logging
-import requests
 import json
 import os
 import base64
+from pprint import pprint
 
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-from pprint import pprint
+import requests
+
 
 logger = logging.getLogger(__name__)
 
@@ -61,18 +62,17 @@ class Methods:
 
         self.credentials_filepath = credentials_filepath
         self.origin = origin
-        # self.redirect_uri = f'{self.origin}/platforms/yahoo/protocols/oauth2/redirect_codes/',
+        # self.redirect_uri = f"{self.origin}/platforms/yahoo/protocols/oauth2/redirect_codes/",
         self.redirect_uri = origin
-        self.authorization_base_url = 'https://api.login.yahoo.com/oauth2/request_auth'
-        self.token_url = 'https://api.login.yahoo.com/oauth2/get_token'
-        self.user_info_url = 'https://api.login.yahoo.com/openid/v1/userinfo'
-        self.revoke_url = 'https://api.login.yahoo.com/oauth2/revoke'
+        self.authorization_base_url = "https://api.login.yahoo.com/oauth2/request_auth"
+        self.token_url = "https://api.login.yahoo.com/oauth2/get_token"
+        self.user_info_url = "https://api.login.yahoo.com/openid/v1/userinfo"
+        self.revoke_url = "https://api.login.yahoo.com/oauth2/revoke"
 
         self.scopes = [
-            'openid',
-            'profile',
-            'email',
-            'sdps-r'
+            "openid",
+            "profile",
+            "email",
         ]
 
         with open(self.credentials_filepath) as creds_fd:
@@ -114,7 +114,8 @@ class Methods:
             logger.error("Yahoo OAuth init failed. See logs below")
             raise error
 
-    def validate(self, code: str = None, state: str = None, redirect_response: str = None, scope: str = '') -> dict:
+    def validate(self, code: str = None, state: str = None,
+                 redirect_response: str = None, scope: str = "") -> dict:
         """
         Validate the authorization code or redirect response and obtain the token and user profile.
 
@@ -122,7 +123,7 @@ class Methods:
             code (str, optional): The authorization code. Defaults to None.
             state (str, optional): The state for protection against CSRF. Defaults to None.
             redirect_response (str, optional): The redirect response. Defaults to None.
-            scope (str, optional): The requested scope. Defaults to ''.
+            scope (str, optional): The requested scope. Defaults to "".
 
         Returns:
             dict: A dictionary containing the token and user profile information.
@@ -142,13 +143,18 @@ class Methods:
 
             if (code and not redirect_response):
                 token = self.yahoo.fetch_token(
-                    token_url=self.token_url, client_secret=self.client_secret, authorization_response=f"{self.redirect_uri}?code={code}&state={state}" if state else f"{self.redirect_uri}?code={code}")
+                    token_url=self.token_url, client_secret=self.client_secret,
+                    authorization_response=f"{self.redirect_uri}?code={code}&state={state}"
+                    if state else f"{self.redirect_uri}?code={code}"
+                )
 
-            elif (redirect_response):
+            elif redirect_response:
                 token = self.yahoo.fetch_token(
-                    token_url=self.token_url, client_secret=self.client_secret, authorization_response=redirect_response)
+                    token_url=self.token_url, client_secret=self.client_secret,
+                    authorization_response=redirect_response
+                )
 
-            if (token):
+            if token:
                 profile = self.yahoo.get(self.user_info_url)
 
                 user_info = profile.json()
@@ -167,7 +173,7 @@ class Methods:
                 raise ValueError("Token not obtained")
 
         except Exception as error:
-            logger.error('Yahoo-OAuth2-validate failed. See logs below')
+            logger.error("Yahoo-OAuth2-validate failed. See logs below")
             raise error
 
     def refresh(self, refresh_token: str = None) -> dict:
@@ -186,7 +192,9 @@ class Methods:
         try:
             if refresh_token:
                 token = self.yahoo.refresh_token(
-                    client_id=self.client_id, client_secret=self.client_secret, token_url=self.token_url, refresh_token=refresh_token)
+                    client_id=self.client_id, client_secret=self.client_secret,
+                    token_url=self.token_url, refresh_token=refresh_token
+                )
                 logger.info("- Successfully refreshed token")
 
                 return {
@@ -197,12 +205,13 @@ class Methods:
                 raise exceptions.EmptyToken()
 
         except Exception as error:
-            logger.error('Yahoo-OAuth2-refresh failed. See logs below')
+            logger.error("Yahoo-OAuth2-refresh failed. See logs below")
             raise error
 
     def invalidate(self, token: dict = None) -> None:
         """
-        Invalidates the Yahoo OAuth token. The Yahoo team hasn't implemented this feature, so it won't work.
+        Invalidates the Yahoo OAuth token. The Yahoo team hasn't implemented this feature,
+        so it won't work.
 
         Args:
             token (dict, optional): The token dictionary. Defaults to None.
@@ -217,19 +226,21 @@ class Methods:
             encoded_credentials = base64.b64encode(
                 client_credentials.encode("utf-8")).decode("utf-8")
 
-            if 'access_token' in token:
+            if "access_token" in token:
                 headers = {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "Authorization": f"Basic {encoded_credentials}"
                 }
 
                 data = {
-                    "token": token.get('access_token'),
-                    "token_type_hint": 'access_token'
+                    "token": token.get("access_token"),
+                    "token_type_hint": "access_token"
                 }
 
-                revoke = self.yahoo.post(url=self.revoke_url,
-                                         client_id=self.client_id, client_secret=self.client_secret, headers=headers, data=data)
+                revoke = self.yahoo.post(
+                    url=self.revoke_url, client_id=self.client_id,
+                    client_secret=self.client_secret, headers=headers, data=data
+                )
 
                 status_code = revoke.status_code
                 if status_code == 200:
@@ -242,5 +253,5 @@ class Methods:
                 raise ValueError("Access token not found")
 
         except Exception as error:
-            logger.error('Yahoo-OAuth2-revoke failed. See logs below')
+            logger.error("Yahoo-OAuth2-revoke failed. See logs below")
             raise error
