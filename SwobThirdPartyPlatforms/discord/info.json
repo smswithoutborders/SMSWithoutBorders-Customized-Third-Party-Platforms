@@ -1,0 +1,11 @@
+{
+  "name": "discord",
+  "description": {
+      "en": "Discord is a free instant messaging software that lets people talk to each other over the internet. By storing access with us, you will be able to send emails by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+      "fr": "Gmail est un service de messagerie gratuit fourni par Google. En stockant l'accès chez nous, vous serez en mesure d'envoyer des e-mails par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne.Discord est un logiciel de messagerie instantanée gratuit qui permet aux gens de se parler via Internet. En stockant l'accès chez nous, vous pourrez envoyer des e-mails par SMS à l'aide de l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne."
+  },
+  "type": "messaging",
+  "logo": "/public/discord-icon.svg",
+  "protocols": ["oauth2"],
+  "letter": "d"
+}
