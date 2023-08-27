@@ -1,0 +1,11 @@
+{
+  "name": "slack",
+  "description": {
+      "en": "Slack is a messaging app for business that connects people to the information they need. By storing access with us, you will be able to send messages by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+      "fr":"Slack est une application de messagerie destinée aux entreprises qui connecte les utilisateurs aux informations dont ils ont besoin. En stockant l'accès chez nous, vous pourrez envoyer des messages par SMS à l'aide de l'application SWOB. Nous demandons uniquement les autorisations les plus élémentaires pour que ce processus fonctionne."
+  },
+  "type": "messaging",
+  "logo": "/public/slack-icon.svg",
+  "protocols": ["oauth2"],
+  "letter": "s"
+}
