@@ -101,12 +101,11 @@ class Methods:
 
     def authorize(self) -> dict:
         """
-        In Slack terms, Install
-        Generate the authorization URL and state.
+        Generate the authorization URL and state, then install app into user's workspace
         Returns:
             dict: A dictionary containing the authorization URL and state.
         Raises:
-            Exception: If the Discord OAuth initialization fails.
+            Exception: If the Slack OAuth initialization fails.
         """
         try:
             state = self.state_store.issue()
