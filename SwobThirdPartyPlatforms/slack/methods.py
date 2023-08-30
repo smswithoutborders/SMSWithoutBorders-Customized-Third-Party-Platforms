@@ -125,18 +125,17 @@ class Methods:
 
     def validate(self, code: str = None, state: str = None, scope: str = '') -> dict:
         """
-        Validate the authorization code or redirect response and obtain the token and user data.
+        Validate the authorization code, obtain the token and user data, then install app.
         Args:
             code (str, optional): The authorization code. Defaults to None.
             state (str, optional): The state for protection against CSRF. Defaults to None.
-            redirect_response (str, optional): The redirect response. Defaults to None.
             scope (str, optional): The requested scope. Defaults to "".
         Returns:
             dict: A dictionary containing the token and user profile information.
         Raises:
             exceptions.MisMatchScope: If there is a scope mismatch.
-            ValueError: If the token is not obtained.
-            Exception: If Discord-OAuth2-validate fails.
+            ValueError: If the code or state is not obtained.
+            Exception: If Slack-OAuth2-validate fails.
         """
         try:
             for item in self.user_scopes:
@@ -144,7 +143,6 @@ class Methods:
                     logger.error("Missing scope %s" % item)
                     raise exceptions.MisMatchScope()
 
-            # Retrieve the auth code and state from the request params
             if not code:
                 logger.error("No token obtained")
                 raise ValueError("Token not obtained")
@@ -155,17 +153,13 @@ class Methods:
                 if self.state_store.consume(state):
                     # code = request.args["code"]
                     client = WebClient()  # no prepared token needed for this app
+                    logger.info("Exchanging auth code for tokens")
                     oauth_response = client.oauth_v2_access(
                         client_id=self.client_id, client_secret=self.client_secret, code=code)
-                    logger.info(f"oauth.v2.access response: {oauth_response}")
-                    print("\n\noauth response: ", oauth_response, end='\n\n')
 
-                    user_access_token = oauth_response["authed_user"]["access_token"]
-                    user_info_response = WebClient(
-                        token=user_access_token).openid_connect_userInfo()
+                    logger.info("Successfully exchanged code for tokens ")
 
-                    print("\n\nuser information",
-                          user_info_response, end="\n\n")
+                    # logger.info(f"oauth.v2.access response: {oauth_response}")
 
                     installed_enterprise = oauth_response.get(
                         "enterprise") or {}
@@ -176,28 +170,30 @@ class Methods:
                     incoming_webhook = oauth_response.get(
                         "incoming_webhook") or {}
 
-                    bot_token = oauth_response.get("access_token")
-                    # NOTE: oauth.v2.access doesn't include bot_id in response
-                    bot_id = None
-                    enterprise_url = None
-                    if bot_token is not None:
-                        auth_test = client.auth_test(token=bot_token)
-                        bot_id = auth_test["bot_id"]
-                        if is_enterprise_install is True:
-                            enterprise_url = auth_test.get("url")
+                    # bot_token = oauth_response.get("access_token")
+                    # # NOTE: oauth.v2.access doesn't include bot_id in response
+                    # bot_id = None
+                    # enterprise_url = None
+                    # if bot_token is not None:
+                    #     auth_test = client.auth_test(token=bot_token)
+                    #     bot_id = auth_test["bot_id"]
+                    #     if is_enterprise_install is True:
+                    #         enterprise_url = auth_test.get("url")
+
+                    logger.info("Installing app to user workspace")
 
                     installation = Installation(
                         app_id=oauth_response.get("app_id"),
                         enterprise_id=installed_enterprise.get("id"),
                         enterprise_name=installed_enterprise.get("name"),
-                        enterprise_url=enterprise_url,
+                        # enterprise_url=enterprise_url,
                         team_id=installed_team.get("id"),
                         team_name=installed_team.get("name"),
-                        bot_token=bot_token,
-                        bot_id=bot_id,
-                        bot_user_id=oauth_response.get("bot_user_id"),
-                        bot_scopes=oauth_response.get(
-                            "scope"),  # comma-separated string
+                        # bot_token=bot_token,
+                        # bot_id=bot_id,
+                        # bot_user_id=oauth_response.get("bot_user_id"),
+                        # bot_scopes=oauth_response.get(
+                        # "scope"),  # comma-separated string
                         user_id=installer.get("id"),
                         user_token=installer.get("access_token"),
                         # comma-separated string
@@ -221,10 +217,22 @@ class Methods:
                     #     enterprise_url=installation.enterprise_url,
                     # )
 
+                    logger.info("Successfully installed app to user workspace")
+
+                    logger.info("Requesting user info")
+
+                    user_info_response = WebClient(
+                        token=installer.get("access_token")).openid_connect_userInfo()
+
+                    logger.info("Successfully requested user info")
+
+                    # logger.info(
+                    #     f"\n\nuser information: {user_info_response}\n\n")
+
                     return {
                         "token": {
-                            "access_token": oauth_response["authed_user"]["access_token"],
-                            "refresh_token": oauth_response["authed_user"]["refresh_token"]
+                            "access_token": installer.get("access_token"),
+                            "refresh_token": installer.get("refresh_token")
                         },
                         "profile": {
                             "name": user_info_response["name"],
@@ -265,7 +273,7 @@ class Methods:
                     client_secret=self.client_secret,
                     token=token
                 )
-                client.auth_test()  # test auth to ensure old token not working
+                # client.auth_test()  # test auth to ensure old token not working
                 # logger.info(f"token rotation/exchange response: {response}")
                 logger.info("- Successfully exchanged the tokens")
 
