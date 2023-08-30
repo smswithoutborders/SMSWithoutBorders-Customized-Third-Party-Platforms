@@ -68,20 +68,7 @@ class Methods:
         self.install_uri = origin
         self.redirect_uri = origin
 
-        # self.scopes = [
-        #     # 'openid',
-        #     # 'profile',
-        #     # 'email',
-        #     # 'chat:write',
-        #     # 'chat:write.public',
-        #     # 'channels:write'
-        # ]
-
         self.user_scopes = [
-            # 'openid',
-            # 'email',
-            # 'profile',
-            # 'search:read'
             'chat:write',
             'channels:write',
             'groups:write',
@@ -105,7 +92,6 @@ class Methods:
         self.installation_store = FileInstallationStore()
         self.authorization_url_generator = AuthorizeUrlGenerator(
             client_id=self.client_id,
-            # scopes=self.scopes,
             user_scopes=self.user_scopes,
         )
         self.redirect_page_renderer = RedirectUriPageRenderer(
