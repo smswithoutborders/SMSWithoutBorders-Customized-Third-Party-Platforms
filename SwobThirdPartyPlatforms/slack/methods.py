@@ -3,11 +3,9 @@ import logging
 import os
 from pprint import pprint
 
-import jwt
-import requests
 
 from slack_sdk.errors import SlackApiError
-from slack_sdk.oauth import OpenIDConnectAuthorizeUrlGenerator, AuthorizeUrlGenerator, RedirectUriPageRenderer
+from slack_sdk.oauth import AuthorizeUrlGenerator, RedirectUriPageRenderer
 from slack_sdk.oauth.installation_store import FileInstallationStore,  Installation
 from slack_sdk.oauth.state_store import FileOAuthStateStore
 from slack_sdk.signature import SignatureVerifier
@@ -352,23 +350,7 @@ class Methods:
                     grant=token,
                     test=False
                 )
-                # headers = {
-                #     'Authorization': f'Bearer {token}',
-                #     'Content-Type': 'application/x-www-form-urlencoded'
-                # }
 
-                # response = requests.get(
-                #     url='https://slack.com/api/auth.revoke',
-                #     headers=headers,
-                # )
-
-                # body = response.json()
-
-                # if not body["ok"]:
-                #     logger.error(f"AN error occurred: {body['error']}")
-                #     raise ValueError(body["error"])
-
-                # logger.info(f"token revoke response: {response.json()}")
                 logger.info("- Successfully revoked the token")
 
                 return response
