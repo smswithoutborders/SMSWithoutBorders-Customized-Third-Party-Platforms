@@ -365,10 +365,9 @@ class Methods:
     def events_subscription(self, body, timestamp, signature, command, enterprise_id=None, team_id=None, trigger_id=None, payload: dict = None):
         try:
             if not self.signature_verifier.is_valid(
-                body,  # =request.get_data(),
-                # =request.headers.get("X-Slack-Request-Timestamp"),
-                timestamp,
-                signature,  # =request.headers.get("X-Slack-Signature"),
+                body,  # request.get_data(),
+                timestamp,  # request.headers.get("X-Slack-Request-Timestamp"),
+                signature,  # request.headers.get("X-Slack-Signature"),
             ):
                 # return make_response("invalid request", 403)
                 logger.error("Invalid Request")
