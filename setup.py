@@ -24,7 +24,7 @@ setup(
     packages=find_packages(),
     package_data={"": ["info.json", "*-icon.svg"]},
     install_requires=[
-        "requests~=2.28.1",
+        "requests~=2.31.0",
         "google-api-python-client~=2.66.0",
         "google-auth-httplib2~=0.1.0",
         "google-auth-oauthlib~=0.4.3",
