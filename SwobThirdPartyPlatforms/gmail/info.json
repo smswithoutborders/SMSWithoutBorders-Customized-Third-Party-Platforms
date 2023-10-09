@@ -1,11 +1,12 @@
 {
-    "name": "gmail",
-    "description": {
-        "en": "Gmail is a free email service provided by Google. By storing access with us, you will be able to send emails by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
-        "fr": "Gmail est un service de messagerie gratuit fourni par Google. En stockant l'accès chez nous, vous serez en mesure d'envoyer des e-mails par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne."
-    },
-    "type": "email",
-    "logo": "/public/gmail-icon.svg",
-    "protocols": ["oauth2"],
-    "letter": "g"
+	"name": "gmail",
+	"description": {
+		"en": "Gmail is a free email service provided by Google. By storing access with us, you will be able to send emails by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+		"fr": "Gmail est un service de messagerie gratuit fourni par Google. En stockant l'accès chez nous, vous serez en mesure d'envoyer des e-mails par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne.",
+		"fa": "Gmail یک سرویس ایمیل رایگان است که توسط گوگل ارائه می شود. با ذخیره دسترسی نزد ما، می‌توانید با استفاده از اپلیکیشن SWOB از طریق پیامک ایمیل ارسال کنید. ما فقط ابتدایی ترین مجوزها را درخواست می کنیم تا این فرآیند کار کند."
+	},
+	"type": "email",
+	"logo": "/public/gmail-icon.svg",
+	"protocols": ["oauth2"],
+	"letter": "g"
 }

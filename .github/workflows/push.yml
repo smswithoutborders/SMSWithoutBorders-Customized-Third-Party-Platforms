@@ -2,7 +2,7 @@ name: Rebuild the backend on the server of SWOB
 on:
   push:
     branches:
-      - main
+      - staging
 jobs:
   build:
     name: Build
