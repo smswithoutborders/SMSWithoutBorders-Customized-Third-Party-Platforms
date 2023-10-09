@@ -1,11 +1,12 @@
 {
-    "name": "twitter",
-    "description": {
-        "en": "Twitter is a microblogging and social networking service. By storing access with us, you will be able to tweet in real time by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
-        "fr": "Twitter est un service de microblogging et de réseau social. En stockant un accès chez nous, vous pourrez tweeter en temps réel par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne."
-    },
-    "type": "text",
-    "logo": "/public/twitter-icon.svg",
-    "protocols": ["oauth2"],
-    "letter": "t"
+	"name": "twitter",
+	"description": {
+		"en": "X is a microblogging and social networking service. By storing access with us, you will be able to tweet in real time by SMS using the SWOB app. We only request the most basic permissions to make this process work.",
+		"fr": "X est un service de microblogging et de réseau social. En stockant un accès chez nous, vous pourrez tweeter en temps réel par SMS en utilisant l'application SWOB. Nous ne demandons que les autorisations les plus élémentaires pour que ce processus fonctionne.",
+		"fa": "X یک سرویس میکروبلاگینگ و شبکه های اجتماعی است. با ذخیره دسترسی با ما، می توانید با استفاده از برنامه SWOB به صورت بلادرنگ از طریق پیامک توییت کنید. ما فقط ابتدایی ترین مجوزها را درخواست می کنیم تا این فرآیند کار کند."
+	},
+	"type": "text",
+	"logo": "/public/twitter-icon.svg",
+	"protocols": ["oauth2"],
+	"letter": "t"
 }
